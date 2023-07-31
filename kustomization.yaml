@@ -1,0 +1,5 @@
+resources:
+ - pgadmin-config.yaml
+ - pgadmin-secret.yaml
+ - pgadmin-service.yaml
+ - pgadmin-statefulset.yaml
