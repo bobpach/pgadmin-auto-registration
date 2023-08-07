@@ -1,5 +1,10 @@
+namespace: postgres-operator
+
 resources:
- - pgadmin-config.yaml
+ - pgadmin-service-account.yaml
+ - pgadmin-role.yaml
+ - pgadmin-role-binding.yaml
+ - pg-cluster-registrar-config.yaml
  - pgadmin-secret.yaml
  - pgadmin-service.yaml
  - pgadmin-statefulset.yaml

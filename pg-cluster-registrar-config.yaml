@@ -1,0 +1,15 @@
+apiVersion: v1
+data:  
+  log-level: debug 
+  log-path: /pgadmin4
+  pgadmin-user: user@domain.com
+  pg-cluster-json-path: /pgadmin4
+  postgres-service-port: "5432"
+  shared-server: "true"
+  sslmode: require
+  wait-interval-seconds: "60"
+kind: ConfigMap
+metadata:
+  labels:
+    vendor: crunchydata
+  name: pg-cluster-registrar-config

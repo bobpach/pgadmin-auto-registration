@@ -1,0 +1,112 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: pgadmin
+spec:
+  serviceName: pgadmin-service
+  podManagementPolicy: Parallel
+  replicas: 1
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: pgadmin
+  template:
+    metadata:
+      labels:
+        app: pgadmin
+    spec:
+      terminationGracePeriodSeconds: 10
+      imagePullSecrets:
+      - name: privatereg
+      serviceAccountName: pgadmin
+      securityContext:
+        fsGroup: 5050
+        runAsUser: 5050
+        runAsNonRoot: true
+      containers:
+        - name: pgadmin
+          image: bobpachcrunchy/pgadmin4:7.4
+          imagePullPolicy: Always
+          env:
+          - name: PGADMIN_DEFAULT_EMAIL
+            value: user@domain.com
+          - name: PGADMIN_DEFAULT_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: pgadmin
+                key: pgadmin-password
+          - name: PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION
+            value: "False"
+          - name: PGADMIN_CONFIG_DEBUG
+            value: "True"
+          - name: PGADMIN_CONFIG_CONSOLE_LOG_LEVEL
+            value: "10"
+          ports:
+          - name: http
+            containerPort: 80
+            protocol: TCP
+          volumeMounts:
+          - name: pgadmin-data
+            mountPath: /var/lib/pgadmin
+        - name: pg-cluster-registrar
+          image: bobpachcrunchy/pg-cluster-registrar:0.0.52
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: LOG_LEVEL
+              valueFrom:
+                configMapKeyRef:
+                  name: pg-cluster-registrar-config
+                  key: log-level
+            - name: LOG_PATH
+              valueFrom:
+                configMapKeyRef:
+                  name: pg-cluster-registrar-config
+                  key: log-path
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+            - name: PGADMIN_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: pg-cluster-registrar-config
+                  key: pgadmin-user
+            - name: PG_CLUSTER_JSON_PATH
+              valueFrom:
+                configMapKeyRef:
+                  name: pg-cluster-registrar-config
+                  key: pg-cluster-json-path
+            - name: POSTGRES_SERVICE_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: pg-cluster-registrar-config
+                  key: postgres-service-port
+            - name: SHARED_SERVER
+              valueFrom:
+                configMapKeyRef:
+                  name: pg-cluster-registrar-config
+                  key: shared-server
+            - name: SSLMODE
+              valueFrom:
+                configMapKeyRef:
+                  name: pg-cluster-registrar-config
+                  key: sslmode
+            - name: WAIT_INTERVAL_SECONDS
+              valueFrom:
+                configMapKeyRef:
+                  name: pg-cluster-registrar-config
+                  key: wait-interval-seconds
+          volumeMounts:
+            - name: pgadmin-data
+              readOnly: false
+              mountPath: /pgadmin4
+  volumeClaimTemplates:
+  - metadata:
+      name: pgadmin-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 3Gi
